@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Buyers · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Buyers</h1>
+  <div class="actions"><a class="btn btn-primary" href="{{ url_for('buyers.create') }}">+ Add buyer</a></div>
+</div>
+{% if buyers %}
+<table class="table">
+  <thead>
+    <tr><th>Name</th><th>Country</th><th>Contact</th><th>Currency</th><th>Incoterm</th>
+        <th>Port of discharge</th><th class="num">Invoices</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for b in buyers %}
+    <tr>
+      <td><strong>{{ b['name'] }}</strong></td>
+      <td>{{ b['country'] }}</td>
+      <td>{{ b['contact_person'] }}{% if b['email'] %} · {{ b['email'] }}{% endif %}</td>
+      <td>{{ b['currency'] }}</td>
+      <td>{{ b['incoterm'] }}</td>
+      <td>{{ b['port_of_discharge'] }}</td>
+      <td class="num">
+        <a href="{{ url_for('invoices.index', buyer_id=b['id']) }}">{{ b['invoice_count'] }}</a>
+      </td>
+      <td class="row-actions">
+        <a href="{{ url_for('reports.buyer_ledger', buyer_id=b['id']) }}">Ledger</a>
+        <a href="{{ url_for('buyers.edit', buyer_id=b['id']) }}">Edit</a>
+        <form method="post" action="{{ url_for('buyers.delete', buyer_id=b['id']) }}"
+              onsubmit="return confirm('Delete buyer {{ b['name'] }}?')">
+          <button class="link-btn danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No buyers yet. <a href="{{ url_for('buyers.create') }}">Add your first overseas buyer</a>.</p>
+{% endif %}
+{% endblock %}

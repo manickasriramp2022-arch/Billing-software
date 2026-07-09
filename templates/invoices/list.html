@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Invoices · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Invoices</h1>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('invoices.create', type='PROFORMA') }}">+ Proforma</a>
+    <a class="btn btn-primary" href="{{ url_for('invoices.create', type='COMMERCIAL') }}">+ Commercial invoice</a>
+  </div>
+</div>
+
+<form method="get" class="filter-bar">
+  <select name="type">
+    <option value="">All types</option>
+    <option value="PROFORMA" {{ 'selected' if f_type == 'PROFORMA' }}>Proforma</option>
+    <option value="COMMERCIAL" {{ 'selected' if f_type == 'COMMERCIAL' }}>Commercial</option>
+  </select>
+  <select name="status">
+    <option value="">All statuses</option>
+    {% for s in ['DRAFT', 'ISSUED', 'CANCELLED'] %}
+    <option value="{{ s }}" {{ 'selected' if f_status == s }}>{{ s | title }}</option>
+    {% endfor %}
+  </select>
+  <select name="buyer_id">
+    <option value="">All buyers</option>
+    {% for b in buyers %}
+    <option value="{{ b['id'] }}" {{ 'selected' if f_buyer == b['id'] | string }}>{{ b['name'] }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn" type="submit">Filter</button>
+</form>
+
+{% if invoices %}
+<table class="table">
+  <thead>
+    <tr><th>No.</th><th>Type</th><th>Date</th><th>Buyer</th><th>Incoterm</th>
+        <th class="num">Total</th><th class="num">Balance</th><th>BRC</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+  {% for i in invoices %}
+    <tr>
+      <td><a href="{{ url_for('invoices.view', invoice_id=i['id']) }}">{{ i['invoice_no'] }}</a></td>
+      <td>{{ 'Proforma' if i['invoice_type'] == 'PROFORMA' else 'Commercial' }}</td>
+      <td>{{ i['invoice_date'] | docdate }}</td>
+      <td>{{ i['buyer_name'] }}</td>
+      <td>{{ i['incoterm'] }}</td>
+      <td class="num">{{ i['currency'] }} {{ i['total'] | money }}</td>
+      <td class="num">
+        {% if i['invoice_type'] == 'COMMERCIAL' %}{{ i['currency'] }} {{ (i['total'] - i['paid']) | money }}{% else %}—{% endif %}
+      </td>
+      <td>
+        {% if i['invoice_type'] == 'COMMERCIAL' %}
+          <span class="badge badge-{{ 'ok' if i['brc_status'] == 'REALIZED' else 'warn' }}">{{ i['brc_status'] | title }}</span>
+        {% else %}—{% endif %}
+      </td>
+      <td><span class="badge badge-{{ i['status'] | lower }}">{{ i['status'] | title }}</span></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No invoices match. <a href="{{ url_for('invoices.create', type='PROFORMA') }}">Create a proforma</a>
+or a <a href="{{ url_for('invoices.create', type='COMMERCIAL') }}">commercial invoice</a>.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{% block title %}{% endblock %}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 12px/1.45 "Helvetica Neue", Arial, sans-serif; color: #111; background: #f0f0f0; }
+  .sheet { width: 210mm; min-height: 285mm; margin: 10px auto; background: #fff;
+           padding: 12mm; position: relative; }
+  .doc-title { text-align: center; font-size: 16px; font-weight: 700; letter-spacing: 3px;
+               padding: 6px 0 10px; text-transform: uppercase; }
+  table.doc { width: 100%; border-collapse: collapse; }
+  table.doc th, table.doc td { border: 1px solid #333; padding: 4px 6px; vertical-align: top; }
+  table.doc th { text-align: left; font-weight: 600; background: #f5f5f5; }
+  .label { font-size: 9px; text-transform: uppercase; color: #444; display: block; margin-bottom: 1px; }
+  .num { text-align: right; }
+  .center { text-align: center; }
+  .small { font-size: 10px; }
+  .company-name { font-size: 14px; font-weight: 700; }
+  .pre { white-space: pre-line; }
+  .grand td { font-weight: 700; background: #f5f5f5; }
+  .words { font-weight: 600; }
+  .sign-row td { height: 70px; }
+  .sign { text-align: right; vertical-align: bottom !important; font-weight: 600; }
+  .watermark { position: absolute; top: 40%; left: 0; right: 0; text-align: center;
+               font-size: 72px; font-weight: 800; color: rgba(200, 30, 30, .15);
+               transform: rotate(-20deg); pointer-events: none; }
+  .toolbar { max-width: 210mm; margin: 10px auto 0; display: flex; gap: 8px; }
+  .toolbar button, .toolbar a { padding: 8px 16px; font-size: 13px; cursor: pointer;
+    border: 1px solid #888; background: #fff; border-radius: 4px; text-decoration: none; color: #111; }
+  @media print {
+    body { background: #fff; }
+    .sheet { margin: 0; width: auto; min-height: 0; padding: 0; }
+    .toolbar { display: none; }
+    @page { size: A4; margin: 12mm; }
+  }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button onclick="window.print()">🖨 Print / Save as PDF</button>
+  <a href="{{ url_for('invoices.view', invoice_id=invoice['id']) }}">← Back to invoice</a>
+</div>
+<div class="sheet">
+  {% if invoice['status'] == 'CANCELLED' %}<div class="watermark">CANCELLED</div>
+  {% elif invoice['status'] == 'DRAFT' %}<div class="watermark">DRAFT</div>{% endif %}
+  {% block sheet %}{% endblock %}
+</div>
+</body>
+</html>

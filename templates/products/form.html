@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit product' if product else 'New product' }} · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ 'Edit product' if product else 'New product' }}</h1></div>
+<form method="post" class="panel form-grid">
+  <label class="span2">Product name *
+    <input name="name" required value="{{ product['name'] if product else 'Live Mud Crab (Scylla serrata)' }}">
+  </label>
+  <label>Grade
+    <input name="grade" value="{{ product['grade'] if product else '' }}" placeholder="e.g. Male XL">
+  </label>
+  <label>Size range
+    <input name="size_range" value="{{ product['size_range'] if product else '' }}" placeholder="e.g. 750 g - 1000 g">
+  </label>
+  <label>Packing unit
+    <input name="packing_unit" value="{{ product['packing_unit'] if product else 'Styrofoam box' }}">
+  </label>
+  <label>HS code
+    <input name="hs_code" value="{{ product['hs_code'] if product else default_hs }}">
+  </label>
+  <label>Billing unit
+    <input name="unit" value="{{ product['unit'] if product else 'KG' }}">
+  </label>
+  <label>Default rate (per unit, invoice currency)
+    <input name="default_rate" type="number" step="0.01" min="0"
+           value="{{ product['default_rate'] if product else '' }}">
+  </label>
+  <div class="span2 form-actions">
+    <button class="btn btn-primary" type="submit">{{ 'Save changes' if product else 'Add product' }}</button>
+    <a class="btn" href="{{ url_for('products.index') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit buyer' if buyer else 'New buyer' }} · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ 'Edit buyer' if buyer else 'New buyer' }}</h1></div>
+<form method="post" class="panel form-grid">
+  <label class="span2">Buyer / company name *
+    <input name="name" required value="{{ buyer['name'] if buyer else '' }}">
+  </label>
+  <label class="span2">Address
+    <textarea name="address" rows="3">{{ buyer['address'] if buyer else '' }}</textarea>
+  </label>
+  <label>City
+    <input name="city" value="{{ buyer['city'] if buyer else '' }}">
+  </label>
+  <label>Country
+    <input name="country" value="{{ buyer['country'] if buyer else '' }}" placeholder="e.g. Singapore">
+  </label>
+  <label>Contact person
+    <input name="contact_person" value="{{ buyer['contact_person'] if buyer else '' }}">
+  </label>
+  <label>Email
+    <input name="email" type="email" value="{{ buyer['email'] if buyer else '' }}">
+  </label>
+  <label>Phone
+    <input name="phone" value="{{ buyer['phone'] if buyer else '' }}">
+  </label>
+  <label>Invoicing currency
+    <select name="currency">
+      {% for c in currencies %}
+      <option value="{{ c }}" {{ 'selected' if buyer and buyer['currency'] == c }}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Default Incoterm
+    <select name="incoterm">
+      {% for t in incoterms %}
+      <option value="{{ t }}" {{ 'selected' if buyer and buyer['incoterm'] == t }}>{{ t }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Default port of discharge
+    <input name="port_of_discharge" value="{{ buyer['port_of_discharge'] if buyer else '' }}"
+           placeholder="e.g. Changi Airport, Singapore">
+  </label>
+  <label class="span2">Default payment terms
+    <input name="payment_terms" value="{{ buyer['payment_terms'] if buyer else '' }}"
+           placeholder="e.g. 30% advance, balance by TT before shipment">
+  </label>
+  <label class="span2">Notes
+    <textarea name="notes" rows="2">{{ buyer['notes'] if buyer else '' }}</textarea>
+  </label>
+  <div class="span2 form-actions">
+    <button class="btn btn-primary" type="submit">{{ 'Save changes' if buyer else 'Add buyer' }}</button>
+    <a class="btn" href="{{ url_for('buyers.index') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

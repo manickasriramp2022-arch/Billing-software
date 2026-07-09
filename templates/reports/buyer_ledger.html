@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Buyer ledger · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Buyer-wise ledger</h1></div>
+<form method="get" class="filter-bar">
+  <select name="buyer_id">
+    <option value="">— choose buyer —</option>
+    {% for b in buyers %}
+    <option value="{{ b['id'] }}" {{ 'selected' if selected == b['id'] | string }}>{{ b['name'] }} ({{ b['currency'] }})</option>
+    {% endfor %}
+  </select>
+  <button class="btn" type="submit">Show ledger</button>
+</form>
+
+{% if buyer %}
+  <h2>{{ buyer['name'] }} — ledger ({{ buyer['currency'] }})</h2>
+  {% if entries %}
+  <table class="table">
+    <thead>
+      <tr><th>Date</th><th>Reference</th><th>Type</th>
+          <th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr>
+    </thead>
+    <tbody>
+    {% for e in entries %}
+      <tr>
+        <td>{{ e['date'] | docdate }}</td>
+        <td><a href="{{ url_for('invoices.view', invoice_id=e['invoice_id']) }}">{{ e['ref'] }}</a></td>
+        <td>{{ e['kind'] }}</td>
+        <td class="num">{{ e['currency'] ~ ' ' ~ (e['debit'] | money) if e['debit'] else '' }}</td>
+        <td class="num">{{ e['currency'] ~ ' ' ~ (e['credit'] | money) if e['credit'] else '' }}</td>
+        <td class="num"><strong>{{ e['currency'] }} {{ e['balance'] | money }}</strong></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No commercial invoices for this buyer yet.</p>
+  {% endif %}
+{% endif %}
+{% endblock %}

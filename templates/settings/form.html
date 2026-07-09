@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Settings · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Company settings</h1></div>
+<form method="post">
+  <div class="panel form-grid">
+    <h2 class="span2">Exporter details (printed on documents)</h2>
+    <label>Company name <input name="company_name" value="{{ s.get('company_name', '') }}"></label>
+    <label>Email <input name="company_email" value="{{ s.get('company_email', '') }}"></label>
+    <label class="span2">Address <textarea name="company_address" rows="3">{{ s.get('company_address', '') }}</textarea></label>
+    <label>Phone <input name="company_phone" value="{{ s.get('company_phone', '') }}"></label>
+    <label>GSTIN <input name="company_gstin" value="{{ s.get('company_gstin', '') }}"></label>
+    <label>IEC (Import Export Code) <input name="company_iec" value="{{ s.get('company_iec', '') }}"></label>
+    <label>LUT ARN (current year) <input name="lut_arn" value="{{ s.get('lut_arn', '') }}"></label>
+  </div>
+  <div class="panel form-grid">
+    <h2 class="span2">Bank details (printed on invoice)</h2>
+    <label>Beneficiary / account name <input name="bank_beneficiary" value="{{ s.get('bank_beneficiary', '') }}"></label>
+    <label>Bank name <input name="bank_name" value="{{ s.get('bank_name', '') }}"></label>
+    <label>Account number <input name="bank_account" value="{{ s.get('bank_account', '') }}"></label>
+    <label>SWIFT code <input name="bank_swift" value="{{ s.get('bank_swift', '') }}"></label>
+    <label>IFSC <input name="bank_ifsc" value="{{ s.get('bank_ifsc', '') }}"></label>
+    <label>Bank branch address <input name="bank_address" value="{{ s.get('bank_address', '') }}"></label>
+  </div>
+  <div class="panel form-grid">
+    <h2 class="span2">Defaults</h2>
+    <label>Default port of loading <input name="default_port_of_loading" value="{{ s.get('default_port_of_loading', '') }}"></label>
+    <label>Default HS code <input name="default_hs_code" value="{{ s.get('default_hs_code', '') }}"></label>
+    <label>Commercial invoice prefix <input name="prefix_commercial" value="{{ s.get('prefix_commercial', '') }}"></label>
+    <label>Proforma invoice prefix <input name="prefix_proforma" value="{{ s.get('prefix_proforma', '') }}"></label>
+    <label class="span2">Invoice footer note
+      <textarea name="invoice_footer_note" rows="2">{{ s.get('invoice_footer_note', '') }}</textarea></label>
+  </div>
+  <div class="form-actions">
+    <button class="btn btn-primary" type="submit">Save settings</button>
+  </div>
+</form>
+{% endblock %}

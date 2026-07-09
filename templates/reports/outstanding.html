@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Outstanding receivables · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Outstanding receivables</h1></div>
+{% if rows %}
+<div class="cards">
+  <div class="card">
+    <div class="card-label">Total outstanding (INR, at invoice rate)</div>
+    <div class="card-value">₹ {{ total_inr | inr }}</div>
+    <div class="card-sub">
+      {% for currency, amount in by_currency.items() %}{{ currency }} {{ amount | money }}{{ ' · ' if not loop.last }}{% endfor %}
+    </div>
+  </div>
+</div>
+<table class="table">
+  <thead>
+    <tr><th>Invoice</th><th>Date</th><th>Buyer</th><th class="num">Total</th>
+        <th class="num">Paid</th><th class="num">Balance</th><th class="num">Age (days)</th><th>BRC</th></tr>
+  </thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><a href="{{ url_for('invoices.view', invoice_id=r['id']) }}">{{ r['invoice_no'] }}</a></td>
+      <td>{{ r['invoice_date'] | docdate }}</td>
+      <td>{{ r['buyer_name'] }}</td>
+      <td class="num">{{ r['currency'] }} {{ r['total'] | money }}</td>
+      <td class="num">{{ r['currency'] }} {{ r['paid'] | money }}</td>
+      <td class="num"><strong>{{ r['currency'] }} {{ r['balance'] | money }}</strong></td>
+      <td class="num {{ 'overdue' if r['age_days'] > 90 }}">{{ r['age_days'] }}</td>
+      <td><span class="badge badge-{{ 'ok' if r['brc_status'] == 'REALIZED' else 'warn' }}">{{ r['brc_status'] | title }}</span></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">Age &gt; 90 days is highlighted — FEMA requires export proceeds to be realized
+within 9 months; follow up well before that.</p>
+{% else %}
+<p class="empty">Nothing outstanding — all issued commercial invoices are fully paid. 🎉</p>
+{% endif %}
+{% endblock %}

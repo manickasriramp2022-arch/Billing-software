@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}BRC & IGST tracker · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Compliance tracker</h1></div>
+
+<div class="panel">
+  <h2>Bank Realization Certificate (BRC / eBRC)</h2>
+  {% if brc %}
+  <table class="table">
+    <thead>
+      <tr><th>Invoice</th><th>Date</th><th>Buyer</th><th class="num">Value</th>
+          <th>Shipping bill</th><th>BRC status</th><th>BRC no. / date</th></tr>
+    </thead>
+    <tbody>
+    {% for r in brc %}
+      <tr>
+        <td><a href="{{ url_for('invoices.view', invoice_id=r['id']) }}">{{ r['invoice_no'] }}</a></td>
+        <td>{{ r['invoice_date'] | docdate }}</td>
+        <td>{{ r['buyer_name'] }}</td>
+        <td class="num">{{ r['currency'] }} {{ r['total'] | money }}</td>
+        <td>{{ r['shipping_bill_no'] or '—' }}</td>
+        <td><span class="badge badge-{{ 'ok' if r['brc_status'] == 'REALIZED' else 'warn' }}">{{ r['brc_status'] | title }}</span></td>
+        <td>{{ r['brc_no'] or '—' }}{% if r['brc_date'] %} · {{ r['brc_date'] | docdate }}{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No issued commercial invoices to track.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>IGST refund tracker</h2>
+  {% if igst %}
+  <table class="table">
+    <thead>
+      <tr><th>Invoice</th><th>Date</th><th>Buyer</th><th class="num">IGST paid (INR)</th>
+          <th>Shipping bill</th><th>Refund status</th></tr>
+    </thead>
+    <tbody>
+    {% for r in igst %}
+      <tr>
+        <td><a href="{{ url_for('invoices.view', invoice_id=r['id']) }}">{{ r['invoice_no'] }}</a></td>
+        <td>{{ r['invoice_date'] | docdate }}</td>
+        <td>{{ r['buyer_name'] }}</td>
+        <td class="num">₹ {{ r['igst_amount_inr'] | inr }}</td>
+        <td>{{ r['shipping_bill_no'] or '—' }}</td>
+        <td><span class="badge badge-{{ 'ok' if r['igst_refund_status'] == 'RECEIVED' else 'warn' }}">{{ r['igst_refund_status'] | title }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No invoices exported with IGST payment — exports under LUT don't appear here.</p>
+  {% endif %}
+</div>
+{% endblock %}
