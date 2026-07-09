@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Dashboard</h1>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('invoices.create', type='PROFORMA') }}">+ Proforma</a>
+    <a class="btn btn-primary" href="{{ url_for('invoices.create', type='COMMERCIAL') }}">+ Commercial invoice</a>
+  </div>
+</div>
+
+<div class="cards">
+  <a class="card" href="{{ url_for('reports.outstanding') }}">
+    <div class="card-label">Outstanding receivables</div>
+    <div class="card-value">₹ {{ outstanding['inr'] | inr }}</div>
+    <div class="card-sub">{{ outstanding['n'] }} unpaid invoice(s)</div>
+  </a>
+  <a class="card" href="{{ url_for('reports.monthly') }}">
+    <div class="card-label">This month's exports</div>
+    <div class="card-value">₹ {{ month['inr'] | inr }}</div>
+    <div class="card-sub">{{ month['n'] }} commercial invoice(s)</div>
+  </a>
+  <a class="card" href="{{ url_for('reports.compliance') }}">
+    <div class="card-label">BRC pending</div>
+    <div class="card-value">{{ brc_pending }}</div>
+    <div class="card-sub">invoices awaiting bank realization</div>
+  </a>
+  <a class="card" href="{{ url_for('reports.compliance') }}">
+    <div class="card-label">IGST refunds open</div>
+    <div class="card-value">{{ igst_pending }}</div>
+    <div class="card-sub">pending / filed refund claims</div>
+  </a>
+</div>
+
+<h2>Recent invoices</h2>
+{% if recent %}
+<table class="table">
+  <thead>
+    <tr><th>No.</th><th>Type</th><th>Date</th><th>Buyer</th>
+        <th class="num">Total</th><th class="num">Balance</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+  {% for i in recent %}
+    <tr>
+      <td><a href="{{ url_for('invoices.view', invoice_id=i['id']) }}">{{ i['invoice_no'] }}</a></td>
+      <td>{{ 'Proforma' if i['invoice_type'] == 'PROFORMA' else 'Commercial' }}</td>
+      <td>{{ i['invoice_date'] | docdate }}</td>
+      <td>{{ i['buyer_name'] }}</td>
+      <td class="num">{{ i['currency'] }} {{ i['total'] | money }}</td>
+      <td class="num">{{ i['currency'] }} {{ (i['total'] - i['paid']) | money }}</td>
+      <td><span class="badge badge-{{ i['status'] | lower }}">{{ i['status'] | title }}</span></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No invoices yet. Add a <a href="{{ url_for('buyers.create') }}">buyer</a>,
+check the <a href="{{ url_for('products.index') }}">product catalog</a>, then create your first
+<a href="{{ url_for('invoices.create', type='PROFORMA') }}">proforma invoice</a>.</p>
+{% endif %}
+{% endblock %}

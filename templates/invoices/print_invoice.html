@@ -1,0 +1,152 @@
+{% extends "invoices/print_base.html" %}
+{% set doc_title = 'PROFORMA INVOICE' if invoice['invoice_type'] == 'PROFORMA' else 'COMMERCIAL INVOICE' %}
+{% block title %}{{ invoice['invoice_no'] }} — {{ doc_title }}{% endblock %}
+{% block sheet %}
+<div class="doc-title">{{ doc_title }}</div>
+<table class="doc">
+  <tr>
+    <td rowspan="2" style="width:50%">
+      <span class="label">Exporter</span>
+      <div class="company-name">{{ s.get('company_name', '') }}</div>
+      <div class="pre">{{ s.get('company_address', '') }}</div>
+      <div class="small">
+        {% if s.get('company_email') %}Email: {{ s['company_email'] }}<br>{% endif %}
+        {% if s.get('company_phone') %}Phone: {{ s['company_phone'] }}<br>{% endif %}
+        {% if s.get('company_gstin') %}GSTIN: {{ s['company_gstin'] }}<br>{% endif %}
+        {% if s.get('company_iec') %}IEC: {{ s['company_iec'] }}{% endif %}
+      </div>
+    </td>
+    <td style="width:25%"><span class="label">Invoice no.</span>{{ invoice['invoice_no'] }}</td>
+    <td style="width:25%"><span class="label">Date</span>{{ invoice['invoice_date'] | docdate }}</td>
+  </tr>
+  <tr>
+    <td><span class="label">Buyer's order / LC ref.</span>{{ invoice['lc_reference'] or '—' }}</td>
+    <td><span class="label">Payment terms</span>{{ invoice['payment_terms'] or '—' }}</td>
+  </tr>
+  <tr>
+    <td>
+      <span class="label">Consignee / Buyer</span>
+      <div class="company-name">{{ buyer['name'] }}</div>
+      <div class="pre">{{ buyer['address'] }}</div>
+      <div>{{ buyer['city'] }}{% if buyer['city'] and buyer['country'] %}, {% endif %}{{ buyer['country'] }}</div>
+      <div class="small">
+        {% if buyer['contact_person'] %}Attn: {{ buyer['contact_person'] }}<br>{% endif %}
+        {% if buyer['phone'] %}Phone: {{ buyer['phone'] }}{% endif %}
+      </div>
+    </td>
+    <td><span class="label">Country of origin</span>{{ invoice['country_of_origin'] }}</td>
+    <td><span class="label">Country of final destination</span>{{ invoice['final_destination'] or buyer['country'] }}</td>
+  </tr>
+  <tr>
+    <td>
+      <span class="label">Terms of delivery</span>
+      {{ invoice['incoterm'] }}{% if invoice['port_of_discharge'] %} {{ invoice['port_of_discharge'] }}{% endif %}
+    </td>
+    <td><span class="label">Port of loading</span>{{ invoice['port_of_loading'] or '—' }}</td>
+    <td><span class="label">Port of discharge</span>{{ invoice['port_of_discharge'] or '—' }}</td>
+  </tr>
+  <tr>
+    <td><span class="label">Vessel / flight no.</span>{{ invoice['vessel_flight_no'] or '—' }}</td>
+    <td><span class="label">Container / AWB no.</span>{{ invoice['container_no'] or '—' }}</td>
+    <td><span class="label">Shipping bill</span>
+      {{ invoice['shipping_bill_no'] or '—' }}{% if invoice['shipping_bill_date'] %} dt. {{ invoice['shipping_bill_date'] | docdate }}{% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td colspan="3" class="small">
+      {% if invoice['gst_treatment'] == 'LUT' %}
+        SUPPLY MEANT FOR EXPORT UNDER LUT WITHOUT PAYMENT OF INTEGRATED TAX
+        {%- if invoice['lut_arn'] %} — LUT ARN: {{ invoice['lut_arn'] }}{% endif %}
+      {% else %}
+        SUPPLY MEANT FOR EXPORT ON PAYMENT OF INTEGRATED TAX —
+        IGST @ {{ invoice['igst_rate'] | qty }}% : ₹ {{ invoice['igst_amount_inr'] | inr }}
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<table class="doc" style="margin-top:-1px">
+  <thead>
+    <tr>
+      <th style="width:16%">Marks &amp; nos.</th>
+      <th style="width:34%">Description of goods</th>
+      <th style="width:10%">HS code</th>
+      <th style="width:8%" class="num">Boxes</th>
+      <th style="width:10%" class="num">Qty</th>
+      <th style="width:6%">Unit</th>
+      <th style="width:8%" class="num">Rate<br>({{ invoice['currency'] }})</th>
+      <th style="width:10%" class="num">Amount<br>({{ invoice['currency'] }})</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td class="small">{% if loop.first %}{{ invoice['marks_and_numbers'] }}{% endif %}</td>
+      <td>{{ item['description'] }}</td>
+      <td class="center">{{ item['hs_code'] }}</td>
+      <td class="num">{{ item['boxes'] | qty }}</td>
+      <td class="num">{{ item['quantity'] | qty }}</td>
+      <td class="center">{{ item['unit'] }}</td>
+      <td class="num">{{ item['unit_price'] | money }}</td>
+      <td class="num">{{ item['amount'] | money }}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td colspan="3" class="num"><strong>Total</strong></td>
+      <td class="num"><strong>{{ totals['boxes'] | qty }}</strong></td>
+      <td class="num"><strong>{{ totals['qty'] | qty }}</strong></td>
+      <td></td>
+      <td class="num">Subtotal</td>
+      <td class="num">{{ invoice['subtotal'] | money }}</td>
+    </tr>
+    {% if invoice['freight_amount'] %}
+    <tr><td colspan="6" rowspan="1" style="border:none"></td>
+        <td class="num">Freight</td><td class="num">{{ invoice['freight_amount'] | money }}</td></tr>
+    {% endif %}
+    {% if invoice['insurance_amount'] %}
+    <tr><td colspan="6" style="border:none"></td>
+        <td class="num">Insurance</td><td class="num">{{ invoice['insurance_amount'] | money }}</td></tr>
+    {% endif %}
+    <tr class="grand">
+      <td colspan="6" style="border:none"></td>
+      <td class="num">TOTAL {{ invoice['incoterm'] }}</td>
+      <td class="num">{{ invoice['currency'] }} {{ invoice['total'] | money }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="doc" style="margin-top:-1px">
+  <tr>
+    <td colspan="2">
+      <span class="label">Amount in words</span>
+      <span class="words">{{ amount_in_words(invoice['total'], invoice['currency']) }}</span>
+    </td>
+  </tr>
+  <tr>
+    <td style="width:60%">
+      <span class="label">Exchange rate &amp; INR equivalent (for exporter's records)</span>
+      1 {{ invoice['currency'] }} = ₹ {{ invoice['exchange_rate'] | money }} ·
+      Total: ₹ {{ invoice['total_inr'] | inr }}
+    </td>
+    <td>
+      <span class="label">Beneficiary bank details</span>
+      <div class="small pre">{% if s.get('bank_beneficiary') %}A/c name: {{ s['bank_beneficiary'] }}
+{% endif %}{% if s.get('bank_name') %}Bank: {{ s['bank_name'] }}
+{% endif %}{% if s.get('bank_account') %}A/c no.: {{ s['bank_account'] }}
+{% endif %}{% if s.get('bank_swift') %}SWIFT: {{ s['bank_swift'] }}
+{% endif %}{% if s.get('bank_ifsc') %}IFSC: {{ s['bank_ifsc'] }}
+{% endif %}{{ s.get('bank_address', '') }}</div>
+    </td>
+  </tr>
+  <tr>
+    <td class="small">
+      <span class="label">Declaration</span>
+      We declare that this invoice shows the actual price of the goods described and that all
+      particulars are true and correct.<br>{{ s.get('invoice_footer_note', '') }}
+    </td>
+    <td class="sign sign-row">
+      For {{ s.get('company_name', '') }}<br><br><br>Authorised signatory
+    </td>
+  </tr>
+</table>
+{% endblock %}

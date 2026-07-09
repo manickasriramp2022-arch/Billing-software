@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Products · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Product catalog</h1>
+  <div class="actions"><a class="btn btn-primary" href="{{ url_for('products.create') }}">+ Add product</a></div>
+</div>
+{% if products %}
+<table class="table">
+  <thead>
+    <tr><th>Product</th><th>Grade</th><th>Size</th><th>Packing</th><th>HS code</th>
+        <th>Unit</th><th class="num">Default rate</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for p in products %}
+    <tr>
+      <td><strong>{{ p['name'] }}</strong></td>
+      <td>{{ p['grade'] }}</td>
+      <td>{{ p['size_range'] }}</td>
+      <td>{{ p['packing_unit'] }}</td>
+      <td>{{ p['hs_code'] }}</td>
+      <td>{{ p['unit'] }}</td>
+      <td class="num">{{ p['default_rate'] | money if p['default_rate'] else '—' }}</td>
+      <td class="row-actions">
+        <a href="{{ url_for('products.edit', product_id=p['id']) }}">Edit</a>
+        <form method="post" action="{{ url_for('products.delete', product_id=p['id']) }}"
+              onsubmit="return confirm('Delete this product?')">
+          <button class="link-btn danger" type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No products. <a href="{{ url_for('products.create') }}">Add a grade</a>.</p>
+{% endif %}
+{% endblock %}

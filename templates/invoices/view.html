@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% set type_label = 'Proforma' if invoice['invoice_type'] == 'PROFORMA' else 'Commercial' %}
+{% block title %}{{ invoice['invoice_no'] }} · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ type_label }} invoice {{ invoice['invoice_no'] }}
+    <span class="badge badge-{{ invoice['status'] | lower }}">{{ summary['label'] }}</span>
+  </h1>
+  <div class="actions">
+    {% if invoice['status'] != 'CANCELLED' %}
+    <a class="btn" href="{{ url_for('invoices.edit', invoice_id=invoice['id']) }}">Edit</a>
+    <a class="btn" target="_blank" href="{{ url_for('invoices.print_invoice', invoice_id=invoice['id']) }}">Print invoice</a>
+    <a class="btn" target="_blank" href="{{ url_for('invoices.print_packing_list', invoice_id=invoice['id']) }}">Print packing list</a>
+    {% endif %}
+    {% if invoice['status'] == 'DRAFT' %}
+    <form method="post" action="{{ url_for('invoices.set_status', invoice_id=invoice['id']) }}">
+      <input type="hidden" name="action" value="issue">
+      <button class="btn btn-primary" type="submit">Mark as issued</button>
+    </form>
+    {% endif %}
+    {% if invoice['invoice_type'] == 'PROFORMA' and invoice['status'] != 'CANCELLED' %}
+      {% if commercial %}
+      <a class="btn" href="{{ url_for('invoices.view', invoice_id=commercial['id']) }}">→ {{ commercial['invoice_no'] }}</a>
+      {% else %}
+      <form method="post" action="{{ url_for('invoices.convert', invoice_id=invoice['id']) }}">
+        <button class="btn btn-primary" type="submit">Convert to commercial</button>
+      </form>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="panel">
+    <h2>Details</h2>
+    <dl class="detail-grid">
+      <dt>Buyer</dt><dd>{{ invoice['buyer_name'] }}{% if invoice['buyer_country'] %}, {{ invoice['buyer_country'] }}{% endif %}</dd>
+      <dt>Date</dt><dd>{{ invoice['invoice_date'] | docdate }}</dd>
+      <dt>Incoterm</dt><dd>{{ invoice['incoterm'] }}{% if invoice['port_of_discharge'] %} — {{ invoice['port_of_discharge'] }}{% endif %}</dd>
+      <dt>Payment terms</dt><dd>{{ invoice['payment_terms'] or '—' }}</dd>
+      <dt>Port of loading</dt><dd>{{ invoice['port_of_loading'] or '—' }}</dd>
+      <dt>Vessel / flight</dt><dd>{{ invoice['vessel_flight_no'] or '—' }}</dd>
+      <dt>Container / AWB</dt><dd>{{ invoice['container_no'] or '—' }}</dd>
+      <dt>Shipping bill</dt>
+      <dd>{{ invoice['shipping_bill_no'] or '—' }}{% if invoice['shipping_bill_date'] %} dt. {{ invoice['shipping_bill_date'] | docdate }}{% endif %}</dd>
+      <dt>LC reference</dt><dd>{{ invoice['lc_reference'] or '—' }}</dd>
+      {% if invoice['proforma_id'] %}
+      <dt>From proforma</dt>
+      <dd><a href="{{ url_for('invoices.view', invoice_id=invoice['proforma_id']) }}">view proforma</a></dd>
+      {% endif %}
+    </dl>
+  </div>
+  <div class="panel">
+    <h2>Compliance</h2>
+    <dl class="detail-grid">
+      <dt>GST treatment</dt>
+      <dd>{% if invoice['gst_treatment'] == 'LUT' %}Under LUT (zero-rated){% else %}With IGST payment{% endif %}</dd>
+      {% if invoice['gst_treatment'] == 'LUT' %}
+      <dt>LUT ARN</dt><dd>{{ invoice['lut_arn'] or '—' }}</dd>
+      {% else %}
+      <dt>IGST</dt><dd>{{ invoice['igst_rate'] | qty }}% = ₹ {{ invoice['igst_amount_inr'] | inr }}</dd>
+      <dt>Refund status</dt><dd>{{ invoice['igst_refund_status'] | title }}</dd>
+      {% endif %}
+      {% if invoice['invoice_type'] == 'COMMERCIAL' %}
+      <dt>BRC status</dt>
+      <dd><span class="badge badge-{{ 'ok' if invoice['brc_status'] == 'REALIZED' else 'warn' }}">{{ invoice['brc_status'] | title }}</span>
+          {% if invoice['brc_no'] %} {{ invoice['brc_no'] }}{% endif %}
+          {% if invoice['brc_date'] %} dt. {{ invoice['brc_date'] | docdate }}{% endif %}</dd>
+      {% endif %}
+      <dt>Exchange rate</dt><dd>1 {{ invoice['currency'] }} = ₹ {{ invoice['exchange_rate'] | money }}</dd>
+      <dt>Notes</dt><dd>{{ invoice['notes'] or '—' }}</dd>
+    </dl>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Items</h2>
+  <div class="table-scroll">
+  <table class="table">
+    <thead>
+      <tr><th>Description</th><th>HS code</th><th class="num">Boxes</th><th class="num">Net (kg)</th>
+          <th class="num">Gross (kg)</th><th class="num">Qty</th><th>Unit</th>
+          <th class="num">Rate</th><th class="num">Amount ({{ invoice['currency'] }})</th></tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+      <tr>
+        <td>{{ item['description'] }}</td>
+        <td>{{ item['hs_code'] }}</td>
+        <td class="num">{{ item['boxes'] | qty }}</td>
+        <td class="num">{{ item['net_weight'] | qty }}</td>
+        <td class="num">{{ item['gross_weight'] | qty }}</td>
+        <td class="num">{{ item['quantity'] | qty }}</td>
+        <td>{{ item['unit'] }}</td>
+        <td class="num">{{ item['unit_price'] | money }}</td>
+        <td class="num">{{ item['amount'] | money }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><th colspan="8" class="num">Subtotal</th><th class="num">{{ invoice['subtotal'] | money }}</th></tr>
+      {% if invoice['freight_amount'] %}
+      <tr><th colspan="8" class="num">Freight</th><th class="num">{{ invoice['freight_amount'] | money }}</th></tr>
+      {% endif %}
+      {% if invoice['insurance_amount'] %}
+      <tr><th colspan="8" class="num">Insurance</th><th class="num">{{ invoice['insurance_amount'] | money }}</th></tr>
+      {% endif %}
+      <tr class="grand"><th colspan="8" class="num">Total</th>
+          <th class="num">{{ invoice['currency'] }} {{ invoice['total'] | money }}</th></tr>
+      <tr><th colspan="8" class="num">INR equivalent</th><th class="num">₹ {{ invoice['total_inr'] | inr }}</th></tr>
+    </tfoot>
+  </table>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Payments</h2>
+  {% if invoice['invoice_type'] == 'COMMERCIAL' %}
+    {% if payments %}
+    <table class="table">
+      <thead>
+        <tr><th>Date</th><th>Kind</th><th class="num">Amount ({{ invoice['currency'] }})</th>
+            <th class="num">Rate</th><th class="num">INR realized</th><th>Bank ref.</th><th>Notes</th><th></th></tr>
+      </thead>
+      <tbody>
+      {% for p in payments %}
+        <tr>
+          <td>{{ p['payment_date'] | docdate }}</td>
+          <td>{{ p['kind'] | title }}</td>
+          <td class="num">{{ p['amount'] | money }}</td>
+          <td class="num">{{ p['exchange_rate'] | money }}</td>
+          <td class="num">₹ {{ p['amount_inr'] | inr }}</td>
+          <td>{{ p['bank_reference'] }}</td>
+          <td>{{ p['notes'] }}</td>
+          <td class="row-actions">
+            <form method="post" action="{{ url_for('invoices.delete_payment', payment_id=p['id']) }}"
+                  onsubmit="return confirm('Remove this payment entry?')">
+              <button class="link-btn danger" type="submit">Remove</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    <p class="payment-summary">
+      Paid: <strong>{{ invoice['currency'] }} {{ summary['paid'] | money }}</strong>
+      (₹ {{ summary['paid_inr'] | inr }}) ·
+      Balance due: <strong>{{ invoice['currency'] }} {{ summary['balance'] | money }}</strong>
+    </p>
+    {% if invoice['status'] != 'CANCELLED' %}
+    <form method="post" action="{{ url_for('invoices.add_payment', invoice_id=invoice['id']) }}" class="inline-form">
+      <label>Date <input type="date" name="payment_date" value="{{ today }}"></label>
+      <label>Kind
+        <select name="kind">
+          <option value="ADVANCE">Advance</option>
+          <option value="BALANCE" selected>Balance</option>
+        </select>
+      </label>
+      <label>Amount ({{ invoice['currency'] }}) <input type="number" name="amount" step="0.01" min="0.01" required></label>
+      <label>Realized rate (INR) <input type="number" name="exchange_rate" step="0.0001" min="0"
+             value="{{ invoice['exchange_rate'] }}"></label>
+      <label>Bank ref. <input name="bank_reference" placeholder="FIRC / UTR no."></label>
+      <button class="btn btn-primary" type="submit">Record payment</button>
+    </form>
+    {% endif %}
+  {% else %}
+    <p class="empty">Advance and balance payments are recorded on the commercial invoice.
+    {% if not commercial and invoice['status'] != 'CANCELLED' %}Use “Convert to commercial” above when the shipment is invoiced.{% endif %}</p>
+  {% endif %}
+</div>
+
+<div class="panel danger-zone">
+  {% if invoice['status'] == 'DRAFT' %}
+  <form method="post" action="{{ url_for('invoices.set_status', invoice_id=invoice['id']) }}"
+        onsubmit="return confirm('Delete this draft permanently?')">
+    <input type="hidden" name="action" value="delete">
+    <button class="link-btn danger" type="submit">Delete draft</button>
+  </form>
+  {% elif invoice['status'] == 'ISSUED' %}
+  <form method="post" action="{{ url_for('invoices.set_status', invoice_id=invoice['id']) }}"
+        onsubmit="return confirm('Cancel invoice {{ invoice['invoice_no'] }}? This cannot be undone.')">
+    <input type="hidden" name="action" value="cancel">
+    <button class="link-btn danger" type="submit">Cancel invoice</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

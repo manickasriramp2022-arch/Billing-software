@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Monthly export summary · Export Billing{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Monthly export summary</h1></div>
+{% if months %}
+<table class="table">
+  <thead>
+    <tr><th>Month</th><th class="num">Invoices</th><th class="num">Boxes</th>
+        <th class="num">Qty</th><th class="num">Value (by currency)</th><th class="num">Value (INR)</th></tr>
+  </thead>
+  <tbody>
+  {% for month, m in months.items() %}
+    <tr>
+      <td><strong>{{ month }}</strong></td>
+      <td class="num">{{ m['n'] }}</td>
+      <td class="num">{{ m['boxes'] | qty }}</td>
+      <td class="num">{{ m['qty'] | qty }}</td>
+      <td class="num">
+        {% for line in m['lines'] %}{{ line['currency'] }} {{ line['total'] | money }}{{ '<br>' | safe if not loop.last }}{% endfor %}
+      </td>
+      <td class="num">₹ {{ m['inr'] | inr }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">Commercial invoices only, excluding cancelled ones. INR values use each invoice's exchange rate.</p>
+{% else %}
+<p class="empty">No commercial invoices yet.</p>
+{% endif %}
+{% endblock %}
